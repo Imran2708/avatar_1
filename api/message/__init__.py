@@ -12,8 +12,10 @@ search_key = os.getenv("AZURE_SEARCH_API_KEY")
 search_api_version = '2023-07-01-Preview'
 search_index_name = os.getenv("AZURE_SEARCH_INDEX")
 
-AOAI_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
-AOAI_key = os.getenv("AZURE_OPENAI_API_KEY")
+AOAI_chat_endpoint = os.getenv("AZURE_OPENAI_CHAT_ENDPOINT")
+AOAI_chat_key = os.getenv("AZURE_OPENAI_CHAT_API_KEY")
+AOAI_embd_endpoint = os.getenv("AZURE_OPENAI_EMBEDDING_ENDPOINT")
+AOAI_embd_key = os.getenv("AZURE_OPENAI_EMBEDDING_API_KEY")
 AOAI_api_version = os.getenv("AZURE_OPENAI_API_VERSION")
 embeddings_deployment = os.getenv("AZURE_OPENAI_EMBEDDINGS_DEPLOYMENT")
 chat_deployment = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT")
@@ -108,7 +110,7 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
     response = chat_complete(messages, functions= functions, function_call= "auto")
 
     products = []
-    
+
     try:
         response_message = response["choices"][0]["message"]
     except:
@@ -162,41 +164,45 @@ def main(req: func.HttpRequest) -> func.HttpResponse:
         
         response_message = response["choices"][0]["message"]
 
+    
     messages.append({'role' : response_message['role'], 'content' : response_message['content']})
 
-    logging.info(json.dumps(response_message))
+    #logging.info(json.dumps(response_message))
 
     response_object = {
-        "messages": messages,
-        "products": products
-    }
+            "messages": messages,
+            "products": products
+        }
 
     return func.HttpResponse(
         json.dumps(response_object),
         status_code=200
     )
 
+    
+    
+
 def execute_sql_query(query, connection_string=database_connection_string, params=None):
     """Execute a SQL query and return the results."""
-    results = []
-    print('database_connection_string', database_connection_string)
     
+    results = []
+
     # Establish the connection
     with pyodbc.connect(connection_string) as conn:
         cursor = conn.cursor()
-        
+                
         if params:
             cursor.execute(query, params)
         else:
             cursor.execute(query)
-        
         # If the query is a SELECT statement, fetch results
         if query.strip().upper().startswith('SELECT'):
             results = cursor.fetchall()
-        
+         
         conn.commit()
 
     return results
+
 
 def get_bonus_points(account_id):
     """Retrieve bonus points and its cash value for a given account ID."""
@@ -205,6 +211,7 @@ def get_bonus_points(account_id):
     query = "SELECT loyalty_points FROM Customers WHERE account_id = ?"
 
     # Execute the query with account_id as a parameter
+
     results = execute_sql_query(query, params=(account_id,))
 
     # If results are empty, return an error message in JSON format
@@ -307,7 +314,7 @@ def display_product_info(product_info, display_size=40):
     image_url = blob_sas_url.split("?")[0] + f"/{image_file}?" + blob_sas_url.split("?")[1]
 
     response = requests.get(image_url)
-    print(image_url)
+    logging.info(image_url)
 
     # Check if the request was successful
     if response.status_code == 200:
@@ -318,9 +325,9 @@ def display_product_info(product_info, display_size=40):
             "image_url": image_url 
             }
     else:
-        print(f"Failed to retrieve image. HTTP Status code: {response.status_code}")
+        logging.info(f"Failed to retrieve image. HTTP Status code: {response.status_code}")
 
-    print(f"""
+    logging.info(f"""
     {product_info['tagline']}
     Original price: ${product_info['original_price']} Special offer: ${product_info['special_offer']} 
     """)
@@ -328,11 +335,11 @@ def display_product_info(product_info, display_size=40):
 def generate_embeddings(text):
     """ Generate embeddings for an input string using embeddings API """
 
-    url = f"{AOAI_endpoint}/openai/deployments/{embeddings_deployment}/embeddings?api-version={AOAI_api_version}"
+    url = f"{AOAI_embd_endpoint}/openai/deployments/{embeddings_deployment}/embeddings?api-version={AOAI_api_version}"
 
     headers = {
         "Content-Type": "application/json",
-        "api-key": AOAI_key,
+        "api-key": AOAI_embd_key,
     }
 
     data = {"input": text}
@@ -385,11 +392,11 @@ def get_product_information(user_question, categories='*', top_k=1):
 def chat_complete(messages, functions, function_call='auto'):
     """  Return assistant chat response based on user query. Assumes existing list of messages """
     
-    url = f"{AOAI_endpoint}/openai/deployments/{chat_deployment}/chat/completions?api-version={AOAI_api_version}"
+    url = f"{AOAI_chat_endpoint}/openai/deployments/{chat_deployment}/chat/completions?api-version={AOAI_api_version}"
 
     headers = {
         "Content-Type": "application/json",
-        "api-key": AOAI_key
+        "api-key": AOAI_chat_key
     }
 
     data = {
