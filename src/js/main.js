@@ -14,7 +14,7 @@ var system_prompt = `You are an AI assistant focused on delivering brief product
 
 const TTSVoice = "en-US-JennyMultilingualNeural" // Update this value if you want to use a different voice
 
-const CogSvcRegion = "westus2" // Fill your Azure cognitive services region here, e.g. westus2
+const CogSvcRegion = "wesuus2" // Fill your Azure cognitive services region here, e.g. westus2
 
 const IceServerUrl = "turn:relay.communication.microsoft.com:3478" // Fill your ICE server URL here, e.g. turn:turn.azure.com:3478
 let IceServerUsername
@@ -52,13 +52,13 @@ function removeDocumentReferences(str) {
 // Setup WebRTC
 function setupWebRTC() {
   // Create WebRTC peer connection
-  fetch("/api/getIceServerToken", {
-    method: "POST"
-  })
-    .then(response => response.json())
-    .then(response => { 
-      IceServerUsername = response.username
-      IceServerCredential = response.credential
+  //fetch("/api/getIceServerToken", {
+    //method: "POST"
+  //})
+    //.then(response => response.json())
+    //.then(response => { 
+      IceServerUsername = "BQAANmXAyIAB2iE0CgIjuChTUuN6ju7NH2owrtXiS1AAAAAMARBLzcgb+8ZGv7VTu51ROGIsrn3j1xkOsVZBYYwYaz6M5IQwJe4="
+      IceServerCredential = "33qDidv0KCP3VDTvpWZCeSaDq2Y="
 
       peerConnection = new RTCPeerConnection({
         iceServers: [{
@@ -117,7 +117,7 @@ function setupWebRTC() {
       peerConnection.createOffer().then(sdp => {
         peerConnection.setLocalDescription(sdp).then(() => { setTimeout(() => { connectToAvatarService() }, 1000) })
       }).catch(console.log)
-    })  
+ 
 }
 
 async function generateText(prompt) {
@@ -129,6 +129,7 @@ async function generateText(prompt) {
 
   let generatedText
   let products
+  console.log(`Input Message: ${JSON.stringify(messages)}`);
   await fetch(`/api/message`, { method: 'POST', headers: { 'Content-Type': 'application/json'}, body: JSON.stringify(messages) })
   .then(response => response.json())
   .then(data => {
@@ -137,8 +138,11 @@ async function generateText(prompt) {
     products = data["products"]
   });
 
+  //.then(console.log);
+
   addToConversationHistory(generatedText, 'light');
   if(products.length > 0) {
+    console.log("Product data: " + products[0]);
     addProductToChatHistory(products[0]);
   }
   return generatedText;
@@ -270,8 +274,11 @@ window.speak = (text) => {
       .then(response => response.text())
       .then(async language => {
         console.log(`Detected language: ${language}`);
+        console.log(`Sending this input to the generateText function: ${text}`);
 
         const generatedResult = await generateText(text);
+
+        console.log(`Called generatetext function sucessfully`);
         
         let spokenTextssml = `<speak version='1.0' xmlns='http://www.w3.org/2001/10/synthesis' xmlns:mstts='https://www.w3.org/2001/mstts' xml:lang='en-US'><voice xml:lang='en-US' xml:gender='Female' name='en-US-JennyMultilingualNeural'><lang xml:lang="${language}">${generatedResult}</lang></voice></speak>`
 
