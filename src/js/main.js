@@ -201,14 +201,14 @@ function connectToAvatarService() {
     if (sdp === undefined) {
       console.log("Failed to get remote SDP. The avatar instance is temporarily unavailable. Result ID: " + result.resultId)
       document.getElementById('startSession').disabled = false
+    } else {
+      peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(atob(sdp)))).then(r => { })
     }
-
-    peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(atob(sdp)))).then(r => { })
   }
 
   const error_cb = function (result) {
     let cancellationDetails = SpeechSDK.CancellationDetails.fromResult(result)
-    console.log(cancellationDetails)
+    console.error("Error during TTS Avatar API request:",cancellationDetails)
     document.getElementById('startSession').disabled = false
   }
 
