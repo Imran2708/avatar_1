@@ -233,7 +233,7 @@ window.startSession = () => {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     },
-    body: JSON.stringfy(access_token),
+    body: null
   })
     .then(response => response.text())
     .then(response => { 
