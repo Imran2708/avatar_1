@@ -7,6 +7,7 @@ import azure.functions as func
 # Define subscription key and region
 subscription_key = os.getenv("AZURE_SPEECH_API_KEY")
 region = os.getenv("AZURE_SPEECH_REGION")
+azure_speech_endpoint = os.getenv("AZURE_SPEECH_ENDPOINT")
 
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
