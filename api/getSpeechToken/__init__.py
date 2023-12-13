@@ -12,17 +12,17 @@ azure_speech_endpoint = os.getenv("AZURE_SPEECH_ENDPOINT")
 def main(req: func.HttpRequest) -> func.HttpResponse:
     logging.info('Python HTTP trigger function processed a request.')
 
-    # Define token endpoint
-    token_endpoint = f"https://{region}.api.cognitive.microsoft.com/sts/v1.0/issueToken"
-
-    # Make HTTP request with subscription key as header
-    response = requests.post(token_endpoint, headers={"Ocp-Apim-Subscription-Key": subscription_key})
-
-    if response.status_code == 200:
-        access_token = response.text
-        return func.HttpResponse(
-             access_token,
-             status_code=200
-        )
+    if req.method == 'POST':
+        # Define token endpoint
+        token_endpoint = f"https://{region}.api.cognitive.microsoft.com/sts/v1.0/issueToken"
+        response = requests.post(token_endpoint, headers={"Ocp-Apim-Subscription-Key": subscription_key})
+        if response.status_code == 200:
+            access_token = response.text
+            return func.HttpResponse(
+                access_token,
+                status_code=200
+            )
+        else:
+            return func.HttpResponse(response.status_code)
     else:
-        return func.HttpResponse(response.status_code)
+        return func.HttpResponse("Method Not Allowed", status_code=405)
