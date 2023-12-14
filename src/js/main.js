@@ -227,7 +227,7 @@ window.startSession = () => {
   speechSynthesisConfig.speechSynthesisVoiceName = TTSVoice
   document.getElementById('playVideo').className = "round-button-hide"
 
-  fetch("/api/getSpeechToken", {
+  fetch("https://brave-wave-0be21231e.4.azurestaticapps.net/api/getSpeechToken", {
     method: "POST",
     headers: {
       'Content-Type': 'application/json',
