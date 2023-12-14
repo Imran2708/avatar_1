@@ -51,61 +51,75 @@ function removeDocumentReferences(str) {
 
 // Setup WebRTC
 function setupWebRTC() {
-    fetch("/api/getIceServerToken", {
-        method: "POST"
-    })
-    .then(response => response.json())
-    .then(response => { 
-        IceServerUsername = "BQAANmXAyIAB2iE0CgIjuChTUuN6ju7NH2owrtXiS1AAAAAMARBLzcgb+8ZGv7VTu51ROGIsrn3j1xkOsVZBYYwYaz6M5IQwJe4="
-        IceServerCredential = "33qDidv0KCP3VDTvpWZCeSaDq2Y="
-        peerConnection = new RTCPeerConnection({
-            iceServers: [{
-                urls: [IceServerUrl],
-                username: IceServerUsername,
-                credential: IceServerCredential
-            }]
-        })
-        peerConnection.ontrack = function (event) {
-            console.log('peerconnection.ontrack', event)
-            remoteVideoDiv = document.getElementById('remoteVideo')
-            for (var i = 0; i < remoteVideoDiv.childNodes.length; i++) {
-                if (remoteVideoDiv.childNodes[i].localName === event.track.kind) {
-                    remoteVideoDiv.removeChild(remoteVideoDiv.childNodes[i])
-                }
-            }
-            const videoElement = document.createElement(event.track.kind)
-            videoElement.id = event.track.kind
-            videoElement.srcObject = event.streams[0]
-            videoElement.autoplay = true
-            videoElement.controls = false
-            document.getElementById('remoteVideo').appendChild(videoElement)
-            canvas = document.getElementById('canvas')
-            remoteVideoDiv.hidden = true
-            canvas.hidden = false
-            videoElement.addEventListener('play', () => {
-                remoteVideoDiv.style.width = videoElement.videoWidth / 2 + 'px'
-                window.requestAnimationFrame(makeBackgroundTransparent)
-            })
-        }
-        // Make necessary update to the web page when the connection state changes
-        peerConnection.oniceconnectionstatechange = e => {
-            console.log("WebRTC status: " + peerConnection.iceConnectionState)
-            if (peerConnection.iceConnectionState === 'connected') {
-                greeting()
-                document.getElementById('loginOverlay').classList.add("hidden");
-            }
-            if (peerConnection.iceConnectionState === 'disconnected') {
+  // Create WebRTC peer connection
+  //fetch("/api/getIceServerToken", {
+    //method: "POST"
+  //})
+    //.then(response => response.json())
+    //.then(response => { 
+      IceServerUsername = "BQAANmXAyIAB2iE0CgIjuChTUuN6ju7NH2owrtXiS1AAAAAMARBLzcgb+8ZGv7VTu51ROGIsrn3j1xkOsVZBYYwYaz6M5IQwJe4="
+      IceServerCredential = "33qDidv0KCP3VDTvpWZCeSaDq2Y="
 
-            }
+      peerConnection = new RTCPeerConnection({
+        iceServers: [{
+          urls: [IceServerUrl],
+          username: IceServerUsername,
+          credential: IceServerCredential
+        }]
+      })
+    
+      // Fetch WebRTC video stream and mount it to an HTML video element
+      peerConnection.ontrack = function (event) {
+        console.log('peerconnection.ontrack', event)
+        // Clean up existing video element if there is any
+        remoteVideoDiv = document.getElementById('remoteVideo')
+        for (var i = 0; i < remoteVideoDiv.childNodes.length; i++) {
+          if (remoteVideoDiv.childNodes[i].localName === event.track.kind) {
+            remoteVideoDiv.removeChild(remoteVideoDiv.childNodes[i])
+          }
         }
-        // Offer to receive 1 audio, and 1 video track
-        peerConnection.addTransceiver('video', { direction: 'sendrecv' })
-        peerConnection.addTransceiver('audio', { direction: 'sendrecv' })
-        // Set local description
-        peerConnection.createOffer().then(sdp => {
-            peerConnection.setLocalDescription(sdp).then(() => { setTimeout(() => { connectToAvatarService() }, 1000) })
-        }).catch(console.log)
-    }
+    
+        const videoElement = document.createElement(event.track.kind)
+        videoElement.id = event.track.kind
+        videoElement.srcObject = event.streams[0]
+        videoElement.autoplay = true
+        videoElement.controls = false
+        document.getElementById('remoteVideo').appendChild(videoElement)
+
+        canvas = document.getElementById('canvas')
+        remoteVideoDiv.hidden = true
+        canvas.hidden = false
+
+        videoElement.addEventListener('play', () => {
+          remoteVideoDiv.style.width = videoElement.videoWidth / 2 + 'px'
+          window.requestAnimationFrame(makeBackgroundTransparent)
+      })
+      }
+    
+      // Make necessary update to the web page when the connection state changes
+      peerConnection.oniceconnectionstatechange = e => {
+        console.log("WebRTC status: " + peerConnection.iceConnectionState)
+    
+        if (peerConnection.iceConnectionState === 'connected') {
+          greeting()
+          document.getElementById('loginOverlay').classList.add("hidden");
+        }
+    
+        if (peerConnection.iceConnectionState === 'disconnected') {
+        }
+      }
+    
+      // Offer to receive 1 audio, and 1 video track
+      peerConnection.addTransceiver('video', { direction: 'sendrecv' })
+      peerConnection.addTransceiver('audio', { direction: 'sendrecv' })
+    
+      // Set local description
+      peerConnection.createOffer().then(sdp => {
+        peerConnection.setLocalDescription(sdp).then(() => { setTimeout(() => { connectToAvatarService() }, 1000) })
+      }).catch(console.log)
+ 
+}
+
 async function generateText(prompt) {
 
   messages.push({
@@ -187,10 +201,10 @@ function connectToAvatarService() {
     if (sdp === undefined) {
       console.log("Failed to get remote SDP. The avatar instance is temporarily unavailable. Result ID: " + result.resultId)
       document.getElementById('startSession').disabled = false
-    } 
+    }
+
     peerConnection.setRemoteDescription(new RTCSessionDescription(JSON.parse(atob(sdp)))).then(r => { })
   }
-  
 
   const error_cb = function (result) {
     let cancellationDetails = SpeechSDK.CancellationDetails.fromResult(result)
@@ -213,13 +227,8 @@ window.startSession = () => {
   speechSynthesisConfig.speechSynthesisVoiceName = TTSVoice
   document.getElementById('playVideo').className = "round-button-hide"
 
-  fetch("https://brave-wave-0be21231e.4.azurestaticapps.net/api/getSpeechToken", {
-    method: "POST",
-    headers: {
-      'Content-Type': 'application/json',
-      'Accept': 'application/json',
-    },
-    body: null
+  fetch("/api/getSpeechToken", {
+    method: "POST"
   })
     .then(response => response.text())
     .then(response => { 
